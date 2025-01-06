@@ -1,5 +1,3 @@
-#!/bin/bash
-
 # Set the VM, image, and networking configuration
 VM_NAME="langflow-dev"
 IMAGE_FAMILY="debian-11"
@@ -10,6 +8,8 @@ REGION="us-central1"
 VPC_NAME="default"
 SUBNET_NAME="default"
 SUBNET_RANGE="10.128.0.0/20"
+NAT_GATEWAY_NAME="nat-gateway"
+CLOUD_ROUTER_NAME="nat-client"
 
 # Set the GCP project's compute region
 gcloud config set compute/region $REGION
@@ -43,46 +43,15 @@ STARTUP_SCRIPT=$(cat <<'EOF'
 #!/bin/bash
 
 # Update and upgrade the system
-apt update && apt upgrade -y
+apt -y update
+apt -y upgrade
 
-# Install necessary dependencies
-apt install -y python3-pip git nginx
-
-# Upgrade pip to the latest version
-pip3 install --upgrade pip
-
-# Clone the LangFlow repository to get the latest version
-cd /opt
-git clone https://github.com/langflow-ai/langflow.git
-cd langflow
-
-# Install LangFlow and its dependencies
-pip3 install .
-
-# Set up a systemd service to run LangFlow
-cat <<EOT > /etc/systemd/system/langflow.service
-[Unit]
-Description=LangFlow Service
-After=network.target
-
-[Service]
-Type=simple
-User=root
-WorkingDirectory=/opt/langflow
-ExecStart=/usr/bin/python3 -m langflow run --host 0.0.0.0 --port 7860
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-EOT
-
-# Reload systemd, enable, and start the LangFlow service
-systemctl daemon-reload
-systemctl enable langflow
-systemctl start langflow
-
-# Open port 7860 for incoming connections
-ufw allow 7860
+# Install Python 3 pip, Langflow, and Nginx
+apt -y install python3-pip
+pip3 install pip -U
+apt -y update
+pip3 install langflow
+langflow run --host 0.0.0.0 --port 7860
 EOF
 )
 
