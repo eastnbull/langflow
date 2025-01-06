@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Set the VM, image, and networking configuration
 VM_NAME="langflow-dev"
 IMAGE_FAMILY="debian-11"
@@ -8,8 +10,6 @@ REGION="us-central1"
 VPC_NAME="default"
 SUBNET_NAME="default"
 SUBNET_RANGE="10.128.0.0/20"
-NAT_GATEWAY_NAME="nat-gateway"
-CLOUD_ROUTER_NAME="nat-client"
 
 # Set the GCP project's compute region
 gcloud config set compute/region $REGION
@@ -32,26 +32,51 @@ if [[ -z "$firewall_7860_exists" ]]; then
   gcloud compute firewall-rules create allow-tcp-7860 --network $VPC_NAME --allow tcp:7860 --source-ranges 0.0.0.0/0 --direction INGRESS
 fi
 
-# Create a firewall rule to allow IAP traffic
-firewall_iap_exists=$(gcloud compute firewall-rules list --filter="name=allow-iap" --format="value(name)")
-if [[ -z "$firewall_iap_exists" ]]; then
-    gcloud compute firewall-rules create allow-iap --network $VPC_NAME --allow tcp:80,tcp:443,tcp:22,tcp:3389 --source-ranges 35.235.240.0/20 --direction INGRESS
-fi
-
 # Define the startup script as a multiline Bash here-doc
 STARTUP_SCRIPT=$(cat <<'EOF'
 #!/bin/bash
 
 # Update and upgrade the system
-apt -y update
-apt -y upgrade
+apt update && apt upgrade -y
 
-# Install Python 3 pip, Langflow, and Nginx
-apt -y install python3-pip
-pip3 install pip -U
-apt -y update
-pip3 install langflow
-langflow run --host 0.0.0.0 --port 7860
+# Install necessary dependencies
+apt install -y python3-pip git nginx
+
+# Upgrade pip to the latest version
+pip3 install --upgrade pip
+
+# Clone the LangFlow repository to get the latest version
+cd /opt
+git clone https://github.com/langflow-ai/langflow.git
+cd langflow
+
+# Install LangFlow and its dependencies
+pip3 install .
+
+# Set up a systemd service to run LangFlow
+cat <<EOT > /etc/systemd/system/langflow.service
+[Unit]
+Description=LangFlow Service
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/langflow
+ExecStart=/usr/bin/python3 -m langflow run --host 0.0.0.0 --port 7860
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOT
+
+# Reload systemd, enable, and start the LangFlow service
+systemctl daemon-reload
+systemctl enable langflow
+systemctl start langflow
+
+# Open port 7860 for incoming connections
+ufw allow 7860
 EOF
 )
 
