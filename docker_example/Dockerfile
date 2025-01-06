@@ -1,4 +1,7 @@
 FROM langflowai/langflow:latest
 
-# Run LangFlow and make it listen on the dynamically provided PORT
-CMD ["python", "-m", "langflow", "run", "--host", "0.0.0.0", "--port", "${PORT}"]
+# Set the default port to 8080 for Cloud Run compatibility
+ENV PORT=8080
+
+# Use /bin/sh to correctly expand environment variables in the CMD
+CMD python -m langflow run --host 0.0.0.0 --port $PORT
