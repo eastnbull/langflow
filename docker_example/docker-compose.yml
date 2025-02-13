@@ -7,14 +7,14 @@ services:
     depends_on:
       - postgres
     environment:
-      - LANGFLOW_DATABASE_URL=postgresql://langflow:langflow@postgres:5432/langflow114
+      - LANGFLOW_DATABASE_URL=
       - LOG_PATH=/app/logs/langflow.log
       - LANGFLOW_LOG_FILE=langflow.log
       - LANGFLOW_LOG_LEVEL=DEBUG
       - LANGFLOW_STORE_ENVIRONMENT_VARIABLES=true
       - LANGFLOW_VARIABLES_TO_GET_FROM_ENVIRONMENT=OPENAI_API_KEY,GOOGLE_API_KEY, Composio_API_Key,ANTHROPIC_API_KEY
-      #- LANGFUSE_SECRET_KEY=sk-lf-e5f78d44-9d6d-4323-9043-d06ca634907d
-      #- LANGFUSE_PUBLIC_KEY=pk-lf-328552a0-4bdd-454a-b115-a75a741190f7
+      #- LANGFUSE_SECRET_KEY=
+      #- LANGFUSE_PUBLIC_KEY=
       #- LANGFUSE_HOST=https://cloud.langfuse.com
       - OPENAI_API_KEY=A
       - GOOGLE_API_KEY=
