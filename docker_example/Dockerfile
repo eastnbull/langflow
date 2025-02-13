@@ -1,4 +1,4 @@
-FROM langflowai/langflow:v1.1.1
+FROM langflowai/langflow:latest
 
 # Set the default port to 8080 for Cloud Run compatibility
 ENV PORT=8080
